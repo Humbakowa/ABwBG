@@ -1,0 +1,50 @@
+---
+title: "Zadanie 3"
+author: "Humbakowa"
+date: "2024-10-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# **----------WPROWADZENIE----------**
+
+## Raport obejmuje
+
+1.  Opis środowiska:
+2.  Prosty kod
+3.  Wnioski
+
+-   Zainstalowane pakiety:
+
+-   ggplot2 \<- Było podane w zadaniu, żeby zainstalować ten pakiet jako nauka instalowania pakietów
+
+-   plotly \<- Pakiet, który został zainstalowany w zadaniu
+
+-   TIGERr \<- Wybrany przeze mnie pakiet, który wiązał się w sumie tylko z zamiłowaniem do zwierząt i tym, że spodobała mi się nazwa pakietu
+
+## Prosty kod
+
+W zainstalowanym pakiecie napotkałam problem, który przeszkodził mi w napisaniu kodu z użyciem pakietu TIGERr. Jest on zbyt skomplikowany dla mojego poziomu wiedzy o środowisku R oraz funkcjach matematycznych. Przeczytanie części opublikowanego artykułu o tym narzędziu niestety nie pomogło mi w zrozumieniu.
+
+Próba wykorzystania funkcji:
+
+`r     install.packages("TIGERr")`
+
+`r     library(TIGERr)`
+
+`r     randomForest: :getTree()`
+
+`r     ramdomForest: :grow(1,2,3,4,5,6,7,8,9,10)` Kod: \> install.packages("TIGERr")
+
+" \> library(TIGERr)"
+
+"\> randomForest::getTree()"
+
+"\> randomForest::grow(1,2,3,4,5,6,7,8,9,10)"
+
+## Wnioski
+
+Ewidentnie **nie rozumiem** tego pakietu
