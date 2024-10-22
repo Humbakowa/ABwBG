@@ -1,0 +1,231 @@
+---
+title: '22.10'
+author: "Humbakowa"
+date: "2024-10-22"
+output: html_document
+---
+
+# Funkcje matematyczne
+
+***Instrukcja:*** **Zapisz rozwiązania zadań z każdej części jako osobny skrypt w formacie .Rmd lub (ewentualnie) .R, np. Czesc1.Rmd, Czesc2.R. Pamiętaj, że im dokładniej opisane zadanie, tym lepiej!**
+
+## Część 1: Podstawowe operacje matematyczne
+
+1.  **Zadanie 1:** Oblicz pole trójkąta o podstawie 10 i wysokości 5, używając operatora mnożenia.
+
+Pole trójkąta -\> $1/2 * a * h$ Przypiszmy zmienne:
+
+````         
+> ```{r}
+a<-10 
+h<-5
+```
+Zdefiniujmy pole trójkąta:
+
+> ```{r}
+pole_trójkąta <- 1/2*a*h 
+    [1] 25
+```
+
+Sprawdzamy wynik:
+
+> ```{r}
+print(pole_trójkąta)
+      [1] 25
+```
+````
+
+2.  **Zadanie 2:** Znajdź resztę z dzielenia 256 przez 7 oraz wynik dzielenia całkowitego.
+
+Używamy wywołania reszty dzielenia oraz dzielenia całkowitego:
+
+Znajdź resztę z dzielenia:
+
+```         
+> '''{r} x\<-256 y\<-7 x%%y [1] 4
+'''
+Dzielenie całkowite: 
+'''
+> '''{r} x%/%y [1] 36 '''
+```
+##Część 2 Funkcje statystyczne
+**Zadanie 1:** Dla wektora danych $[2, 4, 6, 8, 10]$ oblicz średnią arytmetyczną, medianę oraz wariancję.
+
+```         
+> '''{r} Definiowanie wektora wektor\<-c(2,4,6,8,10) średnia\<-mean(wektor) mediana\<-median(wektor)
+'''
+Wywołanie wyników:
+
+> '''{r} print(średnia) 
+print(mediana) 
+print(wariancja) 
+'''
+```
+
+8.  **Zadanie 2:** Stwórz wektor z 50 losowych liczb z przedziału od 1 do 100. Znajdź wartość minimalną, maksymalną oraz sumę wszystkich elementów.
+
+```{r}
+wektorjedensto<-c(1:100)
+```
+
+```{r}
+losowe<-sample(wektorjedensto, size=50, replace= FALSE)
+```
+
+Prezentacja wyników dla wartości minimalnej, wartości maksymalnej oraz sumy:
+
+> min(losowe) [1] 2
+>
+> max(losowe) [1] 100
+>
+> sum(losowe) [1] 2721
+
+9.  **Zadanie 3:** Dla wektora danych $[3, 7, 7, 7, 2, 2, 5]$ utwórz tabelę częstości występowania każdej wartości.
+Tworzymy wektor:
+```{r}
+wektordanych<-c("3","7","7","7","2","2","5")
+```
+Tworzymy tabelę częstości występowania:
+```{r}
+tabela <- table(wektordanych)
+print(tabela)
+```
+## Część 3: Operacje na wektorach i indeksowanie
+
+1. **Zadanie 1:** Stwórz wektor, który będzie zwracał wszystkie wartości od 0 do 1 co 0,1.
+Definiowanie wektora:
+```{r}
+wektor1 <- seq(from = 0, to = 1, by = 0.1)
+```
+Sprawdźmy wynik:
+```{r}
+print(wektor1)
+```
+2. **Zadanie 2:** Dla wektora $[2, 4, 6, 8, 10]$ wybierz drugi i czwarty element.
+Definiujemy wektor:
+```{r}
+wektor2 <-c(2,4,6,8,10)
+```
+Wybieramy element 2 i 4:
+```{r}
+drugi<-wektor2[2]
+czwarty<-wektor2[4]
+```
+Sprawdźmy:
+```{r}
+print(drugi)
+print(czwarty)
+```
+## Część 4: Praca z ramkami danych (data frames)
+
+1. **Zadanie 1:** Utwórz ramkę danych zawierającą informacje o produktach: nazwa (tekst), cena (liczba), ilość (liczba całkowita).
+Tworzymy ramkę danych:
+```{r}
+produkty<-data.frame(
+  nazwa = c("komputer","klawiatura","długopis"),
+  cena = c(999.99,69.99, 12.99 ),
+  liczba=c(18,18,24)
+)
+```
+
+2. **Zadanie 2:** Wyświetl kolumnę `'nazwa'` z ramki danych produktów.
+Wyświetlamy kolumnę odnośnie nazwy produktów:
+```{r}
+produkty$nazwa
+produkty[, "nazwa"] 
+```
+
+## Część 5: Funkcje logiczne i warunkowe
+
+1. **Zadanie 1:** Sprawdź, czy liczba 7 jest większa od 5 i jednocześnie mniejsza od 10.
+Przypisujemy dane:
+```{r}
+x=7
+y=5
+z=10
+```
+Sprawdzamy wynik korzystając z oreparota &, który łączy oba warunki:
+```{r}
+(x>y)&(x<z)
+```
+
+2. **Zadanie 2:** Dla wektora $[-3, 2, 5]$ użyj funkcji `ifelse()`, aby przypisać "Dodatnia" lub "Ujemna" do każdego elementu.
+Przypisujemy dane:
+```{r}
+wektor3<-c(-3,2,5)
+```
+Wykorzystujemy funkcję 'ifelse()':
+```{r}
+wyniki <- ifelse(wektor3 > 0, "Dodatni", "Niedodatni")
+```
+Wyniki:
+```{r}
+print(wyniki)
+```
+3. **Zadanie 3:** Sprawdź, czy jakikolwiek element wektora $[FALSE, FALSE, TRUE]$ jest prawdziwy.
+Przypisujemy dane:
+```{r}
+wektor4<-c("FALSE", "FALSE", "TRUE")
+any(wektor4 = "TRUE")
+```
+
+4. **Zadanie 4:** Znajdź indeksy liczb parzystych w wektorze $[1, 2, 3, 4, 5, 6]$.
+Przypisujemy dane:
+```{r}
+przykład<-c(1,2,3,4,5,6)
+```
+Sprawdzamy indeksy parzyste w wektorze:
+```{r}
+indeksy_parzyste <- which(przykład%%2 == 0)
+print(indeksy_parzyste)
+```
+## Część 6: Pętle i iteracje
+
+1. **Zadanie 1:** Napisz pętlę `for`, która wypisze liczby od 1 do 5.
+Każemy programowi zrobić pętlę:
+```{r}
+for (i in 1:5) {
+  print(i)
+}
+```
+2. **Zadanie 2:** Użyj pętli `while`, aby obliczyć silnię liczby 5.
+Użycie pętli while:
+```{r}
+i <- 1
+while (i <= 5) {
+  print(  i <- (i + 1)*(i+2)*(i+3)*(i+4)*(i+5))
+}
+```
+Nie umiem jednak tego przekształcić. Przynajmniej w inny sposób jak tak jak powyżej, ale jest to źle^
+
+Poniżej sposób wyjaśniony przez prowadzącego:
+Definiujemy:
+```{r}
+n<-5
+silnia<-1
+i <- 1
+```
+Robimy pętlę i określamy warunki:
+```{r}
+  while(i<=5){
+  silnia<- silnia*i
+  i<-i+1
+}
+print(silnia)
+```
+3. **Zadanie 3:** Stwórz macierz $2 \times 5$ wypełnioną kolumnami i za pomocą funkcji `apply()` oblicz sumę elementów w każdym wierszu.
+Tworzymy macierz:
+```{r}
+macierz <- matrix(2:5, nrow = 3)
+suma_wierszy <- apply(macierz, 1, sum)
+suma_kolumn <- apply(macierz, 2, sum)
+```
+
+4. **Zadanie 4:** Użyj funkcji `sapply()` na liście $[1\!:\!3,\; 4\!:\!6,\; 7\!:\!9]$ do obliczenia sumy elementów każdej podlisty.
+
+5. **Zadanie 5:** Napisz pętlę `repeat`, która będzie zwiększać zmienną $x$ o 2, aż $x$ przekroczy 10.
+
+6. **Zadanie 6:** Użyj funkcji `tapply()` do obliczenia średniej długości słów w grupach tekstów.
+
+
+
