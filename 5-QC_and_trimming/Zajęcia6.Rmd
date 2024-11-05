@@ -1,0 +1,93 @@
+---
+title: "Untitled"
+author: "Humbakowa"
+date: "2024-11-05"
+output: html_document
+---
+
+# Instalacja pakietów
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("ShortRead", "Rqc", "Biostrings"), force = TRUE)
+```
+
+## Sprawdzenie zainstalowanych pakietów oraz wgranie ich z funkcją "library"
+
+```{r}
+library(ShortRead)
+```
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("VariantAnnotation")
+BiocManager::install("VariantAnnotation")
+BiocManager::install("Hmisc")
+
+```
+
+```{r}
+library(Rqc)
+library(Biostrings)
+
+packageVersion("ShortRead")
+packageVersion("Rqc")
+packageVersion("Biostrings")
+```
+
+## Wczytanie sekwencji fasta do R \<- wskazanie ścieżki oraz wczytanie pliku z użyciem fq_reads. Sprawdzam podstawowe informacje o pliku
+
+```{r}
+fq_file <- "C:/Users/s196814/Desktop/Zadania/SRR31220563.fastq.gz"
+fq_reads <- readFastq(fq_file)
+length(fq_reads)
+fq_reads[1:5]
+```
+
+W przypadku numerów odczytu w pliku otrzymano wynik:
+
+2090228
+
+oraz
+
+class: ShortReadQ length: 5 reads; width: 150 151 cycles
+
+## Generowanie raportu QC za pomocą ShortRead
+
+-   Wygenerowanie obiektu z wynikami oraz generowanie raportu QC
+
+```{r}
+qa_results <- qa(fq_file, type = "fastq")
+report(qa_results, dest = "C:/Users/s196814/Desktop/Zadania/QA_results1")
+```
+
+Komentarze odnośnie raportu:
+
+1.  W przeglądarce otrzymano raport z elementami kodu, który po wpisaniu do konsoli zwróci nam identyczne wyniki jak te otrzymane w przeglądarce
+
+2.  Pierwszy wykres wskazuje ile mamy odczytów w wersji nieprzekonwertowanej
+
+3.  Drugi mówi o procencie odczytanych nukleotydów o danej sekwencji
+
+4.  Następny jest wykres wskazujący na ocenę punktową jakości (jakość nie istniała. Zapikowała dopiero koło 30 odczytu)
+
+5.  Dystrybucja odczytu- informacja o tym ile razy nastąpiło pokrycie danych i od którego odczytu nasze sekwecje stają się homogeniczne. Można też poniżej sprawdzić ile razy pokrywa się dana sekwencja. Pierwszy wynik odnośnie powtórzeń G (158 razy) jest alarmujący
+
+6.  Wykres o jakości odczytu i zliczenie ile razy dany nukleotyd występuje w tej sekwencji. Duże wahania na początku oznaczają błędy odczytu związane z rozpoczęciem procesu
+
+7.  Kolejny wykres pokazuję ocenę odczytów jakości dla cyklu oraz porównanie kwantyli i średniej dla danego odczytu
+
+8.  Ostatnią informacją jest sprawdzenie, czy nastąpiło zanieczyszczenie adapterami wraz z odczytem procentowym. Jako, że sprawdzona sekwencja została opublikowana nie wystąpiło zanieczyszczenie adaptorami
+
+## Próba wykorzystania funkcji rqc
+```{r}
+rqc_results <- rqc(path = "C:/Users/s196814/Desktop/Zadania", pattern = "SRR31220563.fastq.gz", sample = TRUE)
+```
+Próba wywołania komendy skutkuje krytycznym błędem
+
+# Analiza wartości GC
+```{r}
+gc_content <- letterFrequency(sread(fq_reads), letters = "GC", as.prob = TRUE)
+hist(gc_content, breaks = 50, main = "Zawartość GC w oryginalnych odczytach", xlab = "Procent GC")
+```
