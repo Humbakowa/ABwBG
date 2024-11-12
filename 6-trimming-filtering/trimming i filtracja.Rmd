@@ -1,0 +1,136 @@
+---
+title: "Przycinanie"
+author: "Humbakowa"
+date: "2024-11-12"
+output: html_document
+---
+
+# Przycinanie (trimming) i filtrowanie danych NGS
+
+## Wczytanie plików FASTQ
+
+Najpierw sprawdzamy czy jest zainstalowany BiocManager oraz potrzebne pakiety
+
+```{r}
+library(BiocManager)
+library(ShortRead)
+```
+
+Następnie wgrywamy pliki, na których będziemy dzisiaj pracować
+
+```{r}
+fq_reads1 <- readFastq("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/ecoli_simulated1_with_adapters.fq")
+fq_reads2 <- readFastq("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/ecoli_simulated2_with_adapters.fq")
+```
+
+Za sprawą funkcji trimmed przycinamy odczyty na podstawie wartości jakości baz. Sprawdzamy również długość nieprzyciętych i przyciętych fragmentów
+
+```{r}
+trimmed_reads1 <- trimTailw(fq_reads1, k = 2, a = "B", halfwidth = 1)
+trimmed_reads2 <- trimTailw(fq_reads2, k = 2, a = "B", halfwidth = 1)
+length(fq_reads1)
+length(trimmed_reads1)
+length(fq_reads2)
+length(trimmed_reads2)
+```
+
+Następnie sprwdzamy ile odczytów zostało przyciętych
+
+```{r}
+ sum(width(trimmed_reads1) < width(fq_reads1))
+sum(width(trimmed_reads2) < width(fq_reads2))
+```
+
+Obliczamy również procenty, które pokażą nam procentowo ile odczytów zostało zmodyfikowane
+
+```{r}
+100-(284123/309440)*100
+100-(273668/309440)*100
+```
+
+Oznacza to, że w przypadku pierwszego pliku obcięto w przybliżeniu 8% odczytów, a w drugim pliku około 11,56%. 
+## Filtracja odczytów o niskiej jakości Ustalamy pliki docelowe oraz nasze kryteria, które w tym przypadku wynoszą: minimalna akceptowalna długość odczytu = 50 bp
+
+```{r}
+filtered_reads1 <- trimmed_reads1[width(trimmed_reads1) >= 50]
+filtered_reads2 <- trimmed_reads2[width(trimmed_reads2) >= 50]
+length(trimmed_reads1)
+length(filtered_reads1)
+length(trimmed_reads2)
+length(filtered_reads2)
+```
+
+Sprawdzamy jaki procent odczytów został odrzucony podczas filtracji
+
+```{r}
+100-((248565/284123)*100)
+100-((223516/273668)*100)
+```
+
+W pierwszym przypadku odrzucono około 12,5% odczytów, a w drugim około 18,3%
+
+##Ponowna kontrola jakości po przycinaniu i filtracji Ustalamy miejsce, gdzie będą zapisywane nasze wyniki
+
+```{r}
+writeFastq(filtered_reads1,"C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/ecoli_simulated1_processed.fq")
+```
+
+```{r}
+writeFastq(filtered_reads2,"C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/ecoli_simulated2_processed.fq")
+```
+Generujemy również raporty
+```{r}
+qa_results1 <- qa("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/ecoli_simulated1_with_adapters.fq", type = "fastq")
+qa_results1_processed <- qa("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/ecoli_simulated1_processed.fq", type = "fastq")
+report(qa_results1, dest = "C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/QA_report_read1_processed")
+qa_results2 <- qa("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/ecoli_simulated2_with_adapters.fq", type = "fastq")
+qa_results2_processed <- qa("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/ecoli_simulated2_processed.fq", type = "fastq")
+report(qa_results2, dest = "C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/QA_report_read2_processed")
+```
+## Analiza rozkładu długości odczytów
+Tworzymy histogramy i oglądamy podgląd
+```{r}
+hist(width(fq_reads1), breaks = 50, main = "Długość odczytów forward przed przycinaniem", xlab = "Długość (bp)")
+hist(width(filtered_reads1), breaks = 50, main = "Długość odczytów forward po przycinaniu", xlab = "Długość (bp)")
+hist(width(fq_reads2), breaks = 50, main = "Długość odczytów reverse przed przycinaniem", xlab = "Długość (bp)")
+hist(width(filtered_reads2), breaks = 50, main = "Długość odczytów forward po przycinaniu", xlab = "Długość (bp)")
+```
+Po przycinaniu widać więcej danych dotyczących częstości występowania określonej długości odczytów
+## Wykrywanie i usuwanie sekwencji adaperów
+```{r}
+BiocManager::install("Biostrings")
+library(Biostrings)
+adapter_seq <- DNAString("AGATCGGAAGAGC")
+trimmed_reads1_adapt <- trimLRPatterns(
+  Lpattern = adapter_seq,
+  subject = filtered_reads1
+)
+filtered_reads1 <- trimmed_reads1_adapt
+trimmed_reads2_adapt <- trimLRPatterns(
+  Lpattern = adapter_seq,
+  subject = filtered_reads2
+)
+filtered_reads2 <- trimmed_reads2_adapt
+```
+Sprawdzenie przycinania
+```{r}
+length(filtered_reads1)
+length(trimmed_reads1)
+
+length(filtered_reads2)
+length(trimmed_reads2)
+sum(width(filtered_reads1) < width(trimmed_reads1))
+   sum(width(filtered_reads2) < width(trimmed_reads2))
+```
+## Ponowna kontrola jakości po usunięciu adapterów
+```{r}
+writeFastq(filtered_reads1,"C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/ecoli_simulated1_final.fq")
+writeFastq(filtered_reads2,"C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/ecoli_simulated2_final.fq")
+qa_results1_final <- qa("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/ecoli_simulated1_final.fq", type = "fastq")
+qa_results2_final <- qa("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/ecoli_simulated2_final.fq", type = "fastq")
+report(qa_results1_final, dest ="C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/QA_report_read1_final")
+```
+
+```{r}
+report(qa_results2_final, dest ="C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/wyniki 12.11/QA_report_read2_final")
+```
