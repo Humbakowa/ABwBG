@@ -1,0 +1,139 @@
+---
+title: "Untitled"
+author: "Humbakowa"
+date: "2024-11-22"
+output: html_document
+---
+
+# Mapowanie genomu referencyjnego
+
+## Zadanie 1
+
+Zaczynam od przygotowania danych do sekwencjonowania. W związku z tym pobieram pliki FASTQ z sekwencjmi E. coli, a następnie importuję je do R studio w celu przeprowadzenia analizy
+
+```{r}
+library(ShortRead)
+```
+
+W następnym kroku importuję pobrane sekwencje z użyciem funkcji readFastq
+
+```{r}
+fq1 <- readFastq("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/SRR31368982.fastq")
+```
+
+Następnie przeprowadzam analizę jakości
+
+```{r}
+qa_result <- qa(fq1, lane = "default")
+report(qa_result, dest="C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/QA_Report")
+```
+
+Następnie opisujemy otrzymane wyniki dotyczące analizy jakości, które otrzymaliśmy w raporcie:
+
+-   Długość sekwencji wynosi: 1219986
+
+-   Ogólna jakość odczytu jest dobra, co jest związane z tym, że jest to sekwencja poznana oraz udostępniona na stronie NCBI
+
+-   Częstotliwość występowania zasad A, T, C i G jet dość równomierny
+
+-   Nie zaobserwowano zanieczyszczenia adapterami co równiez jest związane z pozyskaniem sekwencji ze strony NCBI
+
+-   Zidentyfikowano sekwencje, które powtarzały się najcześciej w ilości 1059 oraz 97
+
+-   Wynik jakości na cykl jest zadowalający. Początek wykresu jest charakterystyczny dla początkowych faz cyklu.
+
+-   Podsumowując raport sekwencja jest dobrej jakości \## Zadanie 2 Zadanie polega na przygotowaniu genomu referencyjnego \## Zadanie 2 Przygotowanie genomu referencyjnego
+
+Pobranie genomu referencyjnego
+
+```{r}
+download.file("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/005/845/GCA_000005845.2_ASM584v2/GCA_000005845.2_ASM584v2_genomic.fna.gz", destfile = "C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/ecoli_genome.fna.gz")
+```
+
+Zgodnie z tym kodem program pobierze z podanej strony genom referencyjny i zapisze go pod podaną nazwą w wybranym przeze mnie miejcu. Następnie należy zaimportwać genom referencyjny do R studio
+
+```{r}
+library(Biostrings)
+ref_genome <- readDNAStringSet("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/ecoli_genome.fna.gz")
+```
+
+## Zadanie 3
+
+Indeksowanie genomu referencyjnego Należy zbudować indeksy korzystając z funkcji buildindex() z pakietu Rsubread. Dzięki temu będzie można zindeksować geom referencyjny
+
+```{r}
+BiocManager::install("Rsubread")
+library(Rsubread)
+buildindex(basename = "ecoli_index", reference = "C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/ecoli_genome.fna.gz")
+```
+
+Analiza wyników indeksowania
+
+1.  Buildindex dał nam wyniki informujące o tym, że indeks został oparty na przestrzeni bazowej, nie został podzielony na fragmenty oraz nie zawierał luk
+
+2.  Sprawdzono również czy sekwencje referencyjne nie zawierają problemów z formatem. Otrzymano również informację o tym ile pamięci RAM będzie wymagało indeksowanie. Dalsza tabelka z procentami odnosi się do procentowego postępu w indeksowaniu oraz potrzebnego czasu (0.3 minuty) na indesowanie i zapisanie całego indeksu.
+
+3.  Podsumowując proces buydowania indeksu genomu referencyjnego zakończył się sukcesem, indeksowanie było procesem szybkim.
+
+4.  W dokumentach utworzyły się nowe pliki dotyczące ideksowania. Są to pliki, których otwarcie manualne nie jest wymagane i komputer ma trudności z odczytaniem ich poza programami.R studio jest w stanie samo je przetworzy do dalszego mapowania. Pliki te zawierają dane techniczne, które są niezbędne do przeprowadzenia mapowania sekwencji, takie jak lokalizacje fragmentów w genomie, informacje o powtórzeniach sekwencji itp. Są to dane, które pozwalają na szybsze dopasowywanie odczytów do referencyjnego genomu.
+
+## Zadanie 4
+
+Mapowanie odczytów do genomu referencyjnego
+
+```{r}
+align(index = "ecoli_index", readfile1 = "C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/SRR31368982.fastq", input_format = "FASTQ", output_file = "C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/aligned_sample.BAM")
+```
+
+Wstępna analiza wyników mapowania: - Procent poprawnie zmapowanych odczytów wynosi: 58,5% - Procent odczytów, które nie zostały zmapowane wynosi zatem: 41,5% - Przyczynami niezmapowania odczytów mogą być na przykład brakujące regiony w genomie referencyjnym ##Zadanie 5 Analiza wyników mapowania
+
+```{r}
+library(GenomicAlignments)
+aln <- readGAlignments("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/aligned_sample.BAM")
+```
+
+Pokrycie genomu i identyfikacja regionów o najwyższym i najniższym pokryciu.
+
+```{r}
+coverage_data <- coverage(aln)
+
+library(ggplot2)
+```
+
+Wizualizacja
+
+```{r}
+cov_df <- as.data.frame(coverage_data[[1]])
+cov_df$position <- as.numeric(rownames(cov_df))
+pdf("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/wyniki.pdf", width = 8, height = 6)
+library(ggplot2)
+ggplot(cov_df[1:25000, ], aes(x = position, y = value)) +
+  geom_line(color = "blue") +
+  labs(title = "Pokrycie genomu E. coli",
+       x = "Pozycja w genomie",
+       y = "Liczba zmapowanych odczytów")
+```
+
+W związku z tym, że nie otrzymywałam pliku pdf, który byłby możliwy do otworzenia i Adobe pokazywało mi że coś jest nie tak z plikiem i powinnam kontaktować się z twórcą pliku pdf zdecydowałam się na zapis wykresu również w formie png, dzięki czemu mogłabym otworzyć wykres w celu jego przeanalizowania
+
+```{r}
+png("C:/Users/imesj/OneDrive/Pulpit/Analizy bioinformatyczne w genomice/19.11/wyniki.png", width = 800, height = 600)
+ggplot(cov_df[1:25000, ], aes(x = position, y = value)) +
+  geom_line(color = "blue") +
+  labs(title = "Pokrycie genomu E. coli",
+       x = "Pozycja w genomie",
+       y = "Liczba zmapowanych odczytów")
+```
+
+W przypadku wykresu:
+
+1.  Oś X reprezentuje pozycje w genomie E. coli (od 0 do około 25 000). Oś Y przedstawia pokrycie liczby odczytów. Wartości wahają się od 0 do około 75
+
+2.  Średni poziom pokrycia można określić jako umiarkowany
+
+3.  Widoczne są wyraźne wahania w liczbie odczytów między różnymi fragmentami genomu. Istnieją obszary zarówno o wysokim pokryciu (szczyty na poziomie do 75) oraz o bardzo niskim lub wręcz zerowym pokryciu
+
+4.  Zauważalne są miejsca, w których liczba zmapowanych odczytów spada do zera, co wskazuje na brak odczytów w tych regionach genomu
+
+5.  W niektórych pozycjach pokrycie osiąga wysokie wartości, co może wynikać na przykład z obecności powtórzeń w genomie, co zostało zaobsewowane we wcześniejszych analizach
+
