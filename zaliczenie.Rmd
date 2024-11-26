@@ -1,0 +1,268 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-11-26"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Kolokwium
+
+## Załadowanie pakietów i sekwencji
+
+Library wczytuje wcześniej zainstalowane pakiety
+
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("ShortRead", "Rqc", "Biostrings"), force = TRUE)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("VariantAnnotation")
+BiocManager::install("VariantAnnotation")
+BiocManager::install("Hmisc")
+library(Rqc)
+library(Biostrings)
+library(BiocManager)
+library(ShortRead)
+```
+
+Sekwencja Za pomocą readFastq jest możliwe odczytanie pliku w formacie
+FASTQ. Jest to plik, który otrzymano w zadaniu
+
+```{r}
+library(Biostrings)
+fq_file <- "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_raw.fq"
+fq_reads <- readFastq(fq_file)
+length(fq_reads)
+```
+
+## Analiza sekwencji
+
+Dzięki qa możliwe jest przeanalizowanie sekwencji. Możliwość
+wygenerowania raportu, który będzie możliwy do otworzenia w przeglądarce
+
+```{r}
+qa_results <- qa(fq_file, type = "fastq")
+report(qa_results, dest="C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/QA_Report")
+```
+
+Otrzymano dane odnośnie sekwencji wgranej:
+
+1.  długość sekwensji 309440
+
+2.  Odczytana częstotliwość wywołań dla nukleotydów szacowana jest na
+    około 25% dla każdego nukleotydu (jest dość równomierna). Występują
+    nukleotydy N, czyli nieznane
+
+3.  Wykres dotyczący ogólnej jakości odczytu pokazuje 2 piki, co może
+    być problematyczne. Jednak wydaje się, że sekwencja jest raczej
+    dobrej jakości
+
+4.  Nie zaobserwowano dużego odczytu sekwencji, które się powtarzają.
+    Najczęściej powtarzająca się sekwencja wystąpiła 4 razy - Wynik
+    jakości na cykl jest zadowalający
+
+5.  Nie wykryto zanieczyszczenia adapterami
+
+## Preprocessing danych sekwencyjnych
+
+```{r}
+library(ShortRead)
+trimmed_reads <- trimTailw(fq_reads, k = 2,  a = "B", successive = TRUE,  halfwidth = 1)
+sum(width(trimmed_reads) < width(fq_reads))
+```
+
+Obcięto wyniki, które znajdowały się poniżej progu
+
+Filtrowanie wyników
+
+```{r}
+filtered_reads <- trimmed_reads[width(trimmed_reads) >= 50]
+length(trimmed_reads)
+length(filtered_reads)
+```
+
+Zapis pliku do nowego pliku FASTQ
+
+```{r}
+writeFastq(filtered_reads, "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_processed.fastq.gz")
+qa_results_processed <- qa("C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_processed.fastq.gz", type = "fastq")
+report(qa_results_processed, dest = "QA_report_processed")
+```
+
+Tutaj obrabiamy sekwencję, na której pracujemy. Musimy przyciąć końce,
+usunąć adaptery i przygotować sekwencję do mapowania z genomem
+referencyjnym
+
+```{r}
+trimmed_reads <- trimTailw(fq_reads, k = 2, a = "B", halfwidth = 1)
+length(fq_reads)
+length(trimmed_reads)
+sum(width(trimmed_reads) < width(fq_reads))
+```
+
+Przycięto sekwencję otrzymaną. Sekwencja jest krótsza o 35772
+
+Filtorwanie odczytów
+
+```{r}
+filtered_reads <- trimmed_reads[width(trimmed_reads) >= 50]
+length(trimmed_reads)
+length(filtered_reads)
+```
+
+Po filtracji otrzymano długość 223516
+
+```{r}
+hist(width(fq_reads), breaks = 50, main = "Długość odczytów przed przycinaniem", xlab = "Długość (bp)")
+hist(width(filtered_reads), breaks = 50, main = "Długość odczytów po przycinaniu", xlab = "Długość (bp)")
+gc_content <- letterFrequency(sread(fq_reads), letters = "GC", as.prob = TRUE)
+hist(gc_content, breaks = 50, main = "Zawartość GC w oryginalnych odczytach", xlab = "Procent GC")
+```
+
+Po przycinaniu mamy sekwencje od około 50 do 190 bp
+
+Wczytujemy adaptery
+
+```{r}
+adapter_seq <- DNAString("AGATCGGAAGAGC")
+match_positions <- vmatchPattern(adapter_seq, sread(fq_reads))
+```
+
+Przycinanie odczytów z adapterami
+
+```{r}
+fq_reads_trimmed <- trimLRPatterns(Lpattern = adapter_seq, subject = sread(fq_reads))
+fq_files <- list.files(path = "data", pattern = "SRR40029[4-6].fastq.gz", full.names = TRUE)
+```
+
+```{r}
+writeFastq(filtered_reads,"C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_simulated_processed.fq")
+report(qa_results, dest = "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/QA_report_read1")
+```
+
+## Genom referencyjny
+
+Należy pobrać genom referencyjny
+
+```{r}
+download.file("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/005/845/GCA_000005845.2_ASM584v2/GCA_000005845.2_ASM584v2_genomic.fna.gz", destfile = "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_genome.fna.gz")
+```
+
+Genom referencyjny został pobrany ze strony. Jest to genom, na którym
+bazowano na wcześniejszych zajęciach. Pochodzi ze strony NCBI. Został
+zapisany pod podaną nazwą w folderze ecoli_genome.gz \## Pobranie
+dalszych potrzebnych pakietów lub ich wgranie poprzez funkcję library
+
+```{r}
+library(Biostrings)
+ref_genome <- readDNAStringSet("C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_genome.fna.gz")
+```
+
+## Indeksowanie genomu referencyjnego
+
+```{r}
+BiocManager::install("Rsubread", force= TRUE)
+library(Rsubread)
+buildindex(basename = "ecoli_index", reference = "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_genome.fna.gz")
+```
+
+```{r}
+library(Biostrings)
+referencyjny<- readDNAStringSet("C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_genome.fna.gz")
+```
+
+Teraz próba indeksowania
+
+```{r}
+library(Rsubread)
+buildindex(basename = "ecoli_index", reference = "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_genome.fna.gz")
+```
+
+-   Zindeksowano również w ciągu 0.3 minuty
+-   Buildindex dał nam wyniki informujące o tym, że indeks został oparty
+    na przestrzeni bazowej, nie został podzielony na fragmenty oraz nie
+    zawierał luk
+-   Sprawdzono również czy sekwencje referencyjne nie zawierają
+    problemów z formatem. Otrzymano również informację o tym ile pamięci
+    RAM będzie wymagało indeksowanie. Dalsza tabelka z procentami odnosi
+    się do procentowego postępu w indeksowaniu oraz potrzebnego czasu
+    (0.3 minuty) na indesowanie i zapisanie całego indeksu.
+-   Podsumowując proces budowania indeksu genomu referencyjnego
+    zakończył się sukcesem, indeksowanie było procesem szybkim.
+-   W dokumentach utworzyły się nowe pliki dotyczące ideksowania. Są to
+    pliki, których otwarcie manualne nie jest wymagane i komputer ma
+    trudności z odczytaniem ich poza programami.R studio jest w stanie
+    samo je przetworzy do dalszego mapowania. Pliki te zawierają dane
+    techniczne, które są niezbędne do przeprowadzenia mapowania
+    sekwencji, takie jak lokalizacje fragmentów w genomie, informacje o
+    powtórzeniach sekwencji itp. Są to dane, które pozwalają na szybsze
+    dopasowywanie odczytów do referencyjnego genomu.
+
+## Mapowanie
+
+```{r}
+align(index = "ecoli_index", readfile1 = "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/ecoli_simulated_processed.fq", input_format = "FASTQ", output_file = "C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/aligned_sample.BAM")
+```
+
+Wstępna analiza wyników mapowania: - Procent poprawnie zmapowanych
+odczytów wynosi około 99,99%
+
+```{r}
+library(GenomicAlignments)
+aln <- readGAlignments("C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/aligned_sample.BAM")
+```
+
+Pokrycie genomu i identyfikacja regionów o najwyższym i najniższym
+pokryciu
+
+```{r}
+coverage_data <- coverage(aln)
+
+library(ggplot2)
+```
+
+Wizualizacja
+
+```{r}
+cov_df <- as.data.frame(coverage_data[[1]])
+cov_df$position <- as.numeric(rownames(cov_df))
+pdf("C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/wyniki.pdf", width = 8, height = 6)
+library(ggplot2)
+ggplot(cov_df[1:25000, ], aes(x = position, y = value)) +
+  geom_line(color = "blue") +
+  labs(title = "Pokrycie genomu E. coli",
+       x = "Pozycja w genomie",
+       y = "Liczba zmapowanych odczytów")
+```
+
+Ponownie otrzymano plik pdf, który nie jest możliwy do otworzenia. Adobe
+pokazuje mi że coś jest nie tak z plikiem i powinnam kontaktować się z
+twórcą pliku pdf zdecydowałam się więc na zapis wykresu również w formie
+png, dzięki czemu mogłabym otworzyć wykres w celu jego przeanalizowania
+
+```{r}
+png("C:/Users/imesj/OneDrive/Pulpit/Zaliczenie/wyniki.png", width = 800, height = 600)
+ggplot(cov_df[1:25000, ], aes(x = position, y = value)) +
+  geom_line(color = "blue") +
+  labs(title = "Pokrycie genomu E. coli",
+       x = "Pozycja w genomie",
+       y = "Liczba zmapowanych odczytów")
+```
+
+W przypadku wykresu:
+
+1.  Oś X reprezentuje pozycje w genomie E. coli (od 0 do około 25 000).
+    Oś Y przedstawia pokrycie liczby odczytów. Wartości wahają się od 0
+    do około 13
+
+2.  Średni poziom pokrycia można określić jako bardzo dobry
+
+3.  Widoczne jest prawie 100% pokrycie. Szczyty na poziomie powyżej 10
+
+## Wnioski
+
+Zadanie zostało wykonane. Sekwencja została zmapowana oraz udało się
+podstawić sekwencję uzyskaną na zajęciach do genomu referencyjnego z
+prawie 100% pokryciem
